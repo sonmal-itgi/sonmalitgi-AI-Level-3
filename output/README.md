@@ -48,3 +48,13 @@ PYTHONPATH=deployment:. python output/unit5_stream_validation/replay.py
 모의 평가 스크립트는 manifest의 val 행만 읽는다. 최종 테스트는 아직 수행 전이다. 모의 재생 시간은 원본 30fps 가정에 근거한다.
 
 단어 구간 준비 스크립트는 Downloads의 01_real_sen_morpheme.zip.part0과 해당 버전의 로컬 문장 배열을 사용한다. 단일 ZIP으로 읽을 수 있는 형태소 파일이 필요하다. 서버가 사용하는 모델과 데이터 전처리 방식은 루트의 hands_dataset.py, word_dataset.py, web_adapter.py, ai_server/ml/word_model.py에서 확인한다.
+
+## 시간 기준 구간 비교
+
+저장소 루트에서 검증 배열을 준비한 후 실행한다.
+
+```sh
+PYTHONPATH=deployment:. python output/unit5_stream_validation/time_windows.py
+```
+
+검증 배열을 다른 로컬 폴더에 보관했다면 UNIT5_EVAL_DIR 환경 변수에 manifest.csv와 clips 폴더가 있는 경로를 지정한다. 결과는 time_window_results.json에 저장되며, 설정별 집계는 REPORT.md에 기록했다.

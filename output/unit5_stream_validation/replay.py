@@ -2,6 +2,7 @@
 import csv
 import hashlib
 import json
+import os
 from collections import deque
 from pathlib import Path
 import time
@@ -13,7 +14,8 @@ from ai_server.sequence import WordSequence, SEQUENCES
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = Path(__file__).resolve().parent
-rows = [r for r in csv.DictReader((ROOT / "output/unit5_eval/manifest.csv").open())
+DATA = Path(os.environ.get("UNIT5_EVAL_DIR", ROOT / "output/unit5_eval"))
+rows = [r for r in csv.DictReader((DATA / "manifest.csv").open())
         if r["split"] == "val"]
 assert len(rows) == 50 and {r["signer"] for r in rows} == {"REAL13", "REAL17"}
 models = {
@@ -31,8 +33,8 @@ def predict(kind, clip, samples):
     return cache[key]
 
 
-def replay(row, target, fps, threshold=.9, second_window=12, stable=2, swap=False):
-    arr = np.load(ROOT / "output/unit5_eval" / row["path"])
+def replay(row, target, fps, threshold=.9, second_window=12, stable=2, swap=False, window_seconds=None):
+    arr = np.load(DATA / row["path"])
     # Source timestamps are unavailable in the extracted ZIP. Explicit 30fps assumption.
     indices = np.unique(np.round(np.arange(0, len(arr), 30 / fps)).astype(int))
     indices = indices[indices < len(arr)]
@@ -41,7 +43,7 @@ def replay(row, target, fps, threshold=.9, second_window=12, stable=2, swap=Fals
     if sequence:
         sequence.judge = Evaluator(sequence.first, threshold=threshold, stable=stable,
                                    require_calibrated=False)
-    frames = deque(maxlen=max(12, second_window) if sequence else 32)
+    frames = deque(maxlen=None if sequence and window_seconds else max(12, second_window) if sequence else 32)
     first_time = None
     history = []
     last_inferred = 0
@@ -49,7 +51,7 @@ def replay(row, target, fps, threshold=.9, second_window=12, stable=2, swap=Fals
     def infer():
         nonlocal first_time
         samples = list(frames)
-        if sequence:
+        if sequence and window_seconds is None:
             samples = samples[-(second_window if sequence.stage else 8):]
         prediction = predict("word" if sequence else "sentence", row["clip_id"], samples) if not swap else models["word" if sequence else "sentence"].predict_landmarks([f for _, f in samples])
         stage = sequence.stage if sequence else None
@@ -63,6 +65,12 @@ def replay(row, target, fps, threshold=.9, second_window=12, stable=2, swap=Fals
         return result
 
     minimum = 8 if sequence else 16
+    def ready():
+        if sequence and window_seconds:
+            # The window includes both endpoints. Source timestamps are rounded to frames.
+            return (len(frames) >= 2 and
+                    (frames[-1][0] - frames[0][0]) / 30 >= window_seconds - 1 / 30)
+        return len(frames) >= minimum
     for count, index in enumerate(indices, 1):
         hands = []
         for points in (arr[index, :21], arr[index, 21:]):
@@ -73,14 +81,19 @@ def replay(row, target, fps, threshold=.9, second_window=12, stable=2, swap=Fals
         frame = dict(schema="mediapipe-hands-v1", image_width=8192, image_height=8192,
                      left_hand=hands[0], right_hand=hands[1])
         frames.append((int(index), frame))
-        if len(frames) >= minimum and (count - minimum) % 2 == 0:
+        if sequence and window_seconds:
+            cutoff = index - window_seconds * 30
+            while len(frames) > 1 and frames[0][0] < cutoff:
+                frames.popleft()
+        due = count % 2 == 0 if sequence and window_seconds else (count - minimum) % 2 == 0
+        if ready() and due:
             result = infer()
             last_inferred = count
             if result["result"] == "PASS":
                 break
     else:
         # Same stop/final inference policy as the production WebSocket handler.
-        if len(frames) >= minimum and len(indices) > last_inferred:
+        if ready() and len(indices) > last_inferred:
             result = infer()
     passed = bool(history and history[-1]["result"] == "PASS")
     return dict(clip=row["clip_id"], signer=row["signer"], angle=row["angle"],
@@ -100,23 +113,24 @@ def summarize(results):
                 front_correct=rate([r for r in correct if r["angle"] == "F"]),
                 by_target={t:rate([r for r in correct if r["target"] == t]) for t in targets})
 
-configs = [
-    ("baseline_8fps", 8, .9, 12, 2),
-    ("baseline_6fps", 6, .9, 12, 2),
-    ("baseline_4fps", 4, .9, 12, 2),
-    ("threshold_080_8fps", 8, .8, 12, 2),
-    ("second_window_16_8fps", 8, .9, 16, 2),
-    ("stable3_8fps", 8, .9, 12, 3),
-]
-report = {}
-for name, fps, threshold, window, stable in configs:
-    started = time.monotonic()
-    results = [replay(row, target, fps, threshold, window, stable)
-               for row in rows for target in targets]
-    report[name] = dict(summary=summarize(results), results=results)
-    print(name, json.dumps(report[name]["summary"]), round(time.monotonic()-started,1), flush=True)
-(OUT / "results.json").write_text(json.dumps(dict(
-    source_fps_assumption=30,
-    checkpoint_sha256={kind:hashlib.sha256((ROOT/file).read_bytes()).hexdigest()
-                       for kind,file in (("sentence","unit5.pt"),("word","unit5_words.pt"))},
-    experiments=report), ensure_ascii=False, indent=2)+"\n")
+if __name__ == "__main__":
+    configs = [
+        ("baseline_8fps", 8, .9, 12, 2),
+        ("baseline_6fps", 6, .9, 12, 2),
+        ("baseline_4fps", 4, .9, 12, 2),
+        ("threshold_080_8fps", 8, .8, 12, 2),
+        ("second_window_16_8fps", 8, .9, 16, 2),
+        ("stable3_8fps", 8, .9, 12, 3),
+    ]
+    report = {}
+    for name, fps, threshold, window, stable in configs:
+        started = time.monotonic()
+        results = [replay(row, target, fps, threshold, window, stable)
+                   for row in rows for target in targets]
+        report[name] = dict(summary=summarize(results), results=results)
+        print(name, json.dumps(report[name]["summary"]), round(time.monotonic()-started,1), flush=True)
+    (OUT / "results.json").write_text(json.dumps(dict(
+        source_fps_assumption=30,
+        checkpoint_sha256={kind:hashlib.sha256((ROOT/file).read_bytes()).hexdigest()
+                           for kind,file in (("sentence","unit5.pt"),("word","unit5_words.pt"))},
+        experiments=report), ensure_ascii=False, indent=2)+"\n")
