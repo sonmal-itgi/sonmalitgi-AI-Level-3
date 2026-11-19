@@ -1,0 +1,149 @@
+{
+  "production": {
+    "validation_correct": 40,
+    "validation_total": 40,
+    "validation_confusion": {
+      "운전->운전": 20,
+      "천천히->천천히": 10,
+      "빨리->빨리": 10
+    },
+    "validation_approx8fps_windows": {
+      "천천히->천천히": 10,
+      "빨리->빨리": 10
+    },
+    "webcam_training_replay": {
+      "raw": {
+        "천천히": 17,
+        "빨리": 8
+      },
+      "stable": {
+        "천천히": 5,
+        "빨리": 2
+      }
+    },
+    "webcam_no_driving_diagnostic": {
+      "raw": {
+        "천천히": 37,
+        "빨리": 28
+      },
+      "stable": {
+        "천천히": 33,
+        "빨리": 24
+      }
+    },
+    "webcam_diagnostic_slow": {
+      "raw": {
+        "천천히": 10
+      },
+      "stable": {
+        "천천히": 9
+      }
+    },
+    "webcam_diagnostic_fast": {
+      "raw": {
+        "빨리": 7
+      },
+      "stable": {
+        "빨리": 6
+      }
+    }
+  },
+  "baseline": {
+    "validation_correct": 40,
+    "validation_total": 40,
+    "validation_confusion": {
+      "운전->운전": 20,
+      "천천히->천천히": 10,
+      "빨리->빨리": 10
+    },
+    "validation_approx8fps_windows": {
+      "천천히->천천히": 10,
+      "빨리->빨리": 10
+    },
+    "webcam_training_replay": {
+      "raw": {
+        "천천히": 20,
+        "빨리": 5
+      },
+      "stable": {
+        "천천히": 11,
+        "빨리": 1
+      }
+    },
+    "webcam_no_driving_diagnostic": {
+      "raw": {
+        "천천히": 37,
+        "빨리": 28
+      },
+      "stable": {
+        "천천히": 32,
+        "빨리": 24
+      }
+    },
+    "webcam_diagnostic_slow": {
+      "raw": {
+        "천천히": 10
+      },
+      "stable": {
+        "천천히": 9
+      }
+    },
+    "webcam_diagnostic_fast": {
+      "raw": {
+        "빨리": 7
+      },
+      "stable": {
+        "빨리": 6
+      }
+    }
+  },
+  "candidate": {
+    "validation_correct": 40,
+    "validation_total": 40,
+    "validation_confusion": {
+      "운전->운전": 20,
+      "천천히->천천히": 10,
+      "빨리->빨리": 10
+    },
+    "validation_approx8fps_windows": {
+      "천천히->천천히": 10,
+      "빨리->빨리": 10
+    },
+    "webcam_training_replay": {
+      "raw": {
+        "운전": 11,
+        "빨리": 14
+      },
+      "stable": {
+        "운전": 3,
+        "빨리": 5
+      }
+    },
+    "webcam_no_driving_diagnostic": {
+      "raw": {
+        "천천히": 36,
+        "빨리": 29
+      },
+      "stable": {
+        "천천히": 34,
+        "빨리": 24
+      }
+    },
+    "webcam_diagnostic_slow": {
+      "raw": {
+        "천천히": 10
+      },
+      "stable": {
+        "천천히": 9
+      }
+    },
+    "webcam_diagnostic_fast": {
+      "raw": {
+        "빨리": 7
+      },
+      "stable": {
+        "빨리": 6
+      }
+    }
+  }
+}
