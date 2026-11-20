@@ -16,7 +16,7 @@ COPY models/intermediate/best.pt models/best.pt
 COPY models/intermediate/classes.json models/classes.json
 LABEL app.sonmalitgi.unit5.training-signers="REAL01,REAL02,REAL03,REAL04,REAL05,REAL06,REAL07,REAL08,REAL09,REAL10,REAL11,REAL12"
 COPY unit5.pt models/unit5.pt
-LABEL app.sonmalitgi.unit5.word-training-signers="REAL01-REAL10"
+LABEL app.sonmalitgi.unit5.word-training-signers="REAL01-REAL12;custom-driving-v1"
 COPY unit5_words.pt models/unit5_words.pt
 ENV UNIT5_WORD_CHECKPOINT=/app/models/unit5_words.pt
 ENV UNIT5_CHECKPOINT=/app/models/unit5.pt
