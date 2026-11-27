@@ -21,6 +21,8 @@ COPY unit5_words.pt models/unit5_words.pt
 ENV UNIT5_WORD_CHECKPOINT=/app/models/unit5_words.pt
 ENV UNIT5_CHECKPOINT=/app/models/unit5.pt
 ENV WORD_MODEL_ADAPTER=web_adapter:create_model HANDS_WORD_CHECKPOINT=/app/models/best.pt
+COPY intermediate_v4 intermediate_v4
+ENV WORD_MODEL_ADAPTER=intermediate_v4.adapter:create_model INTERMEDIATE_CHECKPOINT=/app/intermediate_v4/best.pt
 RUN useradd --uid 10001 --create-home app
 USER app
 EXPOSE 8080

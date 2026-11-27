@@ -17,3 +17,7 @@
 !models/intermediate/
 !models/intermediate/best.pt
 !models/intermediate/classes.json
+
+!intermediate_v4/
+!intermediate_v4/**
+intermediate_v4/__pycache__/
